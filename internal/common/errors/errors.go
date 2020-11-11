@@ -1,53 +1,40 @@
 package errors
 
-type ErrorType struct {
-	t string
-}
-
-var (
-	ErrorTypeUnknown        = ErrorType{"unknown"}
-	ErrorTypeAuthorization  = ErrorType{"authorization"}
-	ErrorTypeIncorrectInput = ErrorType{"incorrect-input"}
-)
+import "errors"
 
 type SlugError struct {
-	error     string
-	slug      string
-	errorType ErrorType
+	err  string
+	slug string
 }
 
 func (s SlugError) Error() string {
-	return s.error
+	return s.err
 }
 
 func (s SlugError) Slug() string {
 	return s.slug
 }
 
-func (s SlugError) ErrorType() ErrorType {
-	return s.errorType
-}
-
-func NewSlugError(error string, slug string) SlugError {
+func NewSlugError(err string, slug string) SlugError {
 	return SlugError{
-		error:     error,
-		slug:      slug,
-		errorType: ErrorTypeUnknown,
+		err:  err,
+		slug: slug,
 	}
 }
 
-func NewAuthorizationError(error string, slug string) SlugError {
-	return SlugError{
-		error:     error,
-		slug:      slug,
-		errorType: ErrorTypeAuthorization,
-	}
+
+func (e *AuthorizationError) Unwrap() error { return e.slugError }
+func (e *AuthorizationError) Error() string { return e.slugError.Error() }
+
+func NewAuthorizationError(err string, slug string) AuthorizationError {
+	return AuthorizationError{slugError: NewSlugError(err, slug)}
 }
 
-func NewIncorrectInputError(error string, slug string) SlugError {
-	return SlugError{
-		error:     error,
-		slug:      slug,
-		errorType: ErrorTypeIncorrectInput,
-	}
+type IncorrectInputError struct{ slugError SlugError }
+
+func (e *IncorrectInputError) Unwrap() error { return e.slugError }
+func (e *IncorrectInputError) Error() string { return e.slugError.Error() }
+
+func NewIncorrectInputError(err string, slug string) IncorrectInputError {
+	return IncorrectInputError{slugError: NewSlugError(err, slug)}
 }
